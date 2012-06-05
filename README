@@ -1,4 +1,8 @@
 Sends package install/remove/upgrade events to graphite
+This means that you can get events into graphite whenever a package is installed/upgraded/removed in your system.
+this infomration can be used as an overlay on your existing graphs with a target like:
+	target=drawAsInfinite(events("package-name","intalled"))
+
 Currently graphite url is hard coded to https://graphite/events/ (patches are welcome)
 
 Testing:

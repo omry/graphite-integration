@@ -1,1 +1,6 @@
 Sends package install/remove/upgrade events to graphite
+Currently graphite url is hard coded to https://graphite/events/ (patches are welcome)
+
+Testing:
+	You can test multiple scenarios with the files in the samples directory:
+	./graphite-hook samples/install.sample

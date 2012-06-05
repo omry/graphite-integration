@@ -1,0 +1,13 @@
+Source: graphite-integration
+Section: utils 
+Priority: extra
+Maintainer: Omry Yadan <omry@face.com>
+Build-Depends: debhelper (>= 7.0.50~)
+Standards-Version: 3.8.4
+Homepage: ?
+
+Package: graphite-integration
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libjson-ruby,curl
+Description: log package installations/upgrade into graphite
+ Log package installation and upgrades into graphite

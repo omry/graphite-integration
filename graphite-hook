@@ -1,0 +1,87 @@
+#!/usr/bin/env ruby1.9.1
+
+require 'optparse'
+require "net/http"
+require "uri"
+require 'json'
+require "socket"
+
+@hostname= Socket.gethostname
+
+def handle_package(pkgname,oldversion,compare,newversion,filename)
+	# TODO : url should be a parameter
+	h = {}
+	if filename == "**REMOVE**"
+		puts "--- Remove #{pkgname} #{oldversion}"
+		h["what"] = "Package removed"
+		h["tags"] = {"hostname"=>@hostname,"name"=>pkgname,"version"=>oldversion,"action"=>"remove"}
+	elsif filename == "**CONFIGURE**"
+		if oldversion == '-'
+			h["what"] = "Package installed"
+			h["tags"] = {"hostname"=>@hostname,"name"=>pkgname,"version"=>newversion,"action"=>"install"}
+			puts "--- Install #{pkgname} #{newversion}"
+		else 
+			h["what"] = "Package upgraded"
+			h["tags"] = {"hostname"=>@hostname,"name"=>pkgname,"oldversion"=>oldversion,"version"=>newversion,"action"=>"upgrade"}
+			puts "--- Upgrade #{pkgname} #{oldversion} -> #{newversion}"
+		end
+	end
+	
+	if h.size > 0
+		url = "https://graphite/events/"
+		cmd = "curl --insecure -X POST #{url} -d '#{h.to_json}'  2>&1"
+		puts cmd
+		%x[#{cmd}]
+	end
+end
+
+def process(stream)
+	ver = nil
+	files = false
+	stream.each_line do |line|
+		line.strip!
+		if line == ""
+			files = true
+			next
+		end
+
+		if (ver == nil) 
+			ver = line
+			if "VERSION 2" != ver
+				raise "Unsupported version  : #{ver}"
+			end
+			next
+		end
+
+		if files
+			(pkgname, oldversion, compare, newversion, filename) = line.split()
+			handle_package(pkgname, oldversion, compare, newversion, filename)
+		end
+	end
+end
+
+$options = {}
+optparse = OptionParser.new do|opts|
+	opts.banner = "Graphite apt-get hook"
+
+	$options[:verbose] = false
+	opts.on( '-v', '--verbose', 'Output more information' ) do
+		$options[:verbose] = true
+	end
+
+	opts.on( '-h', '--help', 'Display this screen' ) do
+		puts opts
+		exit
+	end
+end
+
+optparse.parse!
+
+stream = $stdin
+if $stdin.tty?
+  ARGV.each do |file|
+	stream = open(file) { |f| f.read }
+  end
+end
+
+process(stream)
